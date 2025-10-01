@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/widgets/custom_buttons.dart';
+import 'login_page.dart';
+import 'registration_page.dart';
 
 void main() {
   runApp(HomeScreen());
@@ -15,6 +18,10 @@ class HomeScreen extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
+      routes:{
+        './login_page.dart':(context)=>const LoginPage(),
+        './registration_page.dart':(context)=>const RegistrationForm(),
+      },
       home: HomePage(),
     );
   }
@@ -53,32 +60,21 @@ class HomePage extends StatelessWidget {
                 const SizedBox(height: 48),
 
                 // Login Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Navigate to Login screen
-                    },
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Text('Login', style: TextStyle(fontSize: 18)),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
+                CustomButton(
+              text: "Login",
+              onPressed: () {
+                Navigator.pushNamed(context, './login_page.dart');
+              },
+              filled: true, // filled button
+            ),
+const SizedBox(height: 24),
                 // Registration Button
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      // Navigate to Registration screen
-                    },
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Text('Register', style: TextStyle(fontSize: 18)),
-                    ),
-                  ),
+                CustomButton(
+                  text: "Register",
+                  onPressed: () {
+                    Navigator.pushNamed(context, './registration_page.dart');
+                  },
+                  filled: false, // outlined button
                 ),
               ],
             ),
