@@ -29,7 +29,7 @@ class _PharmacyHomeState extends State<PharmacyHome> {
       "registrationId": _registrationIdController.text.trim(),
       "address": _addressController.text.trim(),
       "phoneNumber": _phoneController.text.trim(),
-      "emailId": _emailController.text.trim(),
+      "email": _emailController.text.trim(),
     };
 
     try {

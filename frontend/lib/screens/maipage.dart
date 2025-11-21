@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-// ✅ Import your dashboards
-import './doctors//doctor_dashboard.dart';
-import './hospitals//hospital_dashboard.dart';
-import './patients//patient_dashboard.dart';
-import './pharmacies//pharmacy_dashboard.dart';
+// DASHBOARDS
+import './doctors/doctor_dashboard.dart';
+import './hospitals/hospital_dashboard.dart';
+import './patients/patient_dashboard.dart';
+import './pharmacies/pharmacy_dashboard.dart';
 
 enum ModuleType { Doctor, Hospital, Patients, Pharmacy }
 
@@ -17,12 +17,7 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Main Modules',
-      theme: ThemeData(
-        primarySwatch: Colors.teal,
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      ),
+      theme: ThemeData(primarySwatch: Colors.teal),
       home: MainPage(),
     );
   }
@@ -48,7 +43,7 @@ class MainPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text('Main Modules')),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: GridView.count(
           crossAxisCount: 2,
           crossAxisSpacing: 18,
@@ -56,7 +51,8 @@ class MainPage extends StatelessWidget {
           children: ModuleType.values.map((module) {
             return GestureDetector(
               onTap: () {
-                Navigator.of(context).push(
+                Navigator.push(
+                  context,
                   MaterialPageRoute(
                     builder: (_) => ModuleLoginPage(module: module),
                   ),
@@ -64,15 +60,20 @@ class MainPage extends StatelessWidget {
               },
               child: Card(
                 elevation: 6,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 10),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 22, horizontal: 12),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(icons[module], size: 52, color: Colors.teal),
                       SizedBox(height: 15),
-                      Text(labels[module]!, style: TextStyle(fontSize: 19, fontWeight: FontWeight.w500)),
+                      Text(labels[module]!,
+                          style: TextStyle(
+                              fontSize: 19, fontWeight: FontWeight.w500)),
                     ],
                   ),
                 ),
@@ -88,6 +89,7 @@ class MainPage extends StatelessWidget {
 class ModuleLoginPage extends StatefulWidget {
   final ModuleType module;
   ModuleLoginPage({required this.module});
+
   @override
   _ModuleLoginPageState createState() => _ModuleLoginPageState();
 }
@@ -100,98 +102,85 @@ class _ModuleLoginPageState extends State<ModuleLoginPage> {
   bool _loading = false;
   String? _errorMsg;
 
-  String get _moduleLabel => widget.module.toString().split('.').last;
+  String get moduleName => widget.module.toString().split('.').last;
 
-  Future<bool> loginUser({
-    required String username,
-    required String password,
-    required ModuleType module,
-  }) async {
-    final apiUrl = {
-      ModuleType.Doctor: 'http://10.0.2.2:3000/doctors/login',
-      ModuleType.Hospital: 'http://10.0.2.2:3000/hospitals/login',
-      ModuleType.Patients: 'http://10.0.2.2:3000/patients/login',
-      ModuleType.Pharmacy: 'http://10.0.2.2:3000/pharmacies/login',
-    }[module]!;
-
-    final response = await http.post(
-      Uri.parse(apiUrl),
-      body: {
-        'username': username,
-        'password': password,
-      },
-    );
-
-    // ✅ Adjust this part based on your backend login response
-    if (response.statusCode == 200) {
-      final decoded = json.decode(response.body);
-      if (decoded['success'] == true) {
-        return true;
-      } else {
-        throw Exception(decoded['message'] ?? 'Invalid credentials');
-      }
-    } else {
-      throw Exception('Login failed: ${response.body}');
+  // --------------- FIXED: API URL -------------------
+  String getLoginUrl() {
+    switch (widget.module) {
+      case ModuleType.Doctor:
+        return 'http://10.0.2.2:3000/doctors/login';
+      case ModuleType.Hospital:
+        return 'http://10.0.2.2:3000/hospitals/login';
+      case ModuleType.Patients:
+        return 'http://10.0.2.2:3000/patients/login';
+      case ModuleType.Pharmacy:
+        return 'http://10.0.2.2:3000/pharmacies/login';
     }
   }
 
+  // --------------- FIXED: JSON LOGIN REQUEST -------------------
+  Future<bool> loginUser() async {
+    final url = getLoginUrl();
+
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {"Content-Type": "application/json"}, // VERY IMPORTANT
+      body: json.encode({
+        "username": _username.text.trim(), // Backend expects email field
+        "password": _password.text.trim(),
+      }),
+    );
+
+    final decoded = json.decode(response.body);
+
+    if (response.statusCode == 200 && decoded["success"] == true) {
+      return true;
+    } else {
+      throw Exception(decoded["message"] ?? "Invalid login");
+    }
+  }
+
+  // --------------- FIXED: DASHBOARD SELECTOR -------------------
+  Widget getDashboard() {
+    switch (widget.module) {
+      case ModuleType.Doctor:
+        return DoctorDashboard();
+      case ModuleType.Hospital:
+        return HospitalDashboard();
+      case ModuleType.Patients:
+        return PatientDashboard();
+      case ModuleType.Pharmacy:
+        return PharmacyDashboard();
+    }
+  }
+
+  // --------------- LOGIN SUBMIT -------------------
   void _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() {
       _loading = true;
       _errorMsg = null;
     });
 
     try {
-      final success = await loginUser(
-        username: _username.text.trim(),
-        password: _password.text,
-        module: widget.module,
-      );
+      final success = await loginUser();
 
       if (!mounted) return;
 
       if (success) {
-        // ✅ Navigate to correct dashboard
-        Widget nextPage;
-        switch (widget.module) {
-          case ModuleType.Doctor:
-            nextPage = DoctorDashboard();
-            break;
-          case ModuleType.Hospital:
-            nextPage = HospitalDashboard();
-            break;
-          case ModuleType.Patients:
-            nextPage = PatientDashboard();
-            break;
-          case ModuleType.Pharmacy:
-            nextPage = PharmacyDashboard();
-            break;
-        }
-
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => nextPage),
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => getDashboard()),
         );
       }
     } catch (e) {
       setState(() {
-        _loading = false;
-        _errorMsg = e.toString();
+        _errorMsg = e.toString().replaceAll("Exception:", "").trim();
       });
     }
-  }
 
-  void _forgotPassword() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Forgot Password'),
-        content: Text('Reset password flow for $_moduleLabel. Enter your email to reset.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: Text('Close')),
-        ],
-      ),
-    );
+    setState(() => _loading = false);
   }
 
   @override
@@ -201,77 +190,75 @@ class _ModuleLoginPageState extends State<ModuleLoginPage> {
     super.dispose();
   }
 
+  // ---------------- UI --------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('$_moduleLabel Login')),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(18.0),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: 420),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      SizedBox(height: 30),
-                      Text('Login as $_moduleLabel', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                      SizedBox(height: 22),
-                      TextFormField(
-                        controller: _username,
-                        decoration: InputDecoration(
-                          labelText: 'Username',
-                          prefixIcon: Icon(Icons.person),
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (v) {
-                          if (v == null || v.isEmpty) return 'Enter username';
-                          return null;
-                        },
+      appBar: AppBar(title: Text("$moduleName Login")),
+      body: Padding(
+        padding: const EdgeInsets.all(18),
+        child: SingleChildScrollView(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 420),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    SizedBox(height: 30),
+                    Text("Login as $moduleName",
+                        style: TextStyle(
+                            fontSize: 22, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 28),
+
+                    // EMAIL
+                    TextFormField(
+                      controller: _username,
+                      decoration: InputDecoration(
+                        labelText: "Username",
+                        prefixIcon: Icon(Icons.email),
                       ),
-                      SizedBox(height: 18),
-                      TextFormField(
-                        controller: _password,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          prefixIcon: Icon(Icons.lock),
-                        ),
-                        obscureText: true,
-                        validator: (v) {
-                          if (v == null || v.isEmpty) return 'Enter password';
-                          return null;
-                        },
+                      validator: (v) =>
+                          v!.isEmpty ? "Enter username" : null,
+                    ),
+                    SizedBox(height: 18),
+
+                    // PASSWORD
+                    TextFormField(
+                      controller: _password,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        labelText: "Password",
+                        prefixIcon: Icon(Icons.lock),
                       ),
-                      SizedBox(height: 20),
-                      if (_errorMsg != null)
-                        Padding(
-                          padding: EdgeInsets.only(bottom: 8),
-                          child: Text(_errorMsg!, style: TextStyle(color: Colors.red, fontSize: 15)),
-                        ),
-                      ElevatedButton(
-                        onPressed: _loading ? null : _submit,
-                        style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                        child: _loading
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                              )
-                            : Text('Login'),
+                      validator: (v) =>
+                          v!.isEmpty ? "Enter password" : null,
+                    ),
+                    SizedBox(height: 22),
+
+                    if (_errorMsg != null)
+                      Text(
+                        _errorMsg!,
+                        style: TextStyle(color: Colors.red, fontSize: 15),
                       ),
-                      TextButton(onPressed: _forgotPassword, child: Text('Forgot Password?')),
-                    ],
-                  ),
+
+                    SizedBox(height: 10),
+
+                    ElevatedButton(
+                      onPressed: _loading ? null : _submit,
+                      child: _loading
+                          ? CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2)
+                          : Text("Login"),
+                      style: ElevatedButton.styleFrom(
+                          minimumSize: Size(double.infinity, 50)),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

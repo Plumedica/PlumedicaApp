@@ -1,4 +1,4 @@
-// models/Doctor.js
+// models/doctor_register.js
 import mongoose from "mongoose";
 
 const doctorSchema = new mongoose.Schema(
@@ -14,11 +14,13 @@ const doctorSchema = new mongoose.Schema(
     address: String,
     shareLocation: { type: Boolean, default: false },
 
-    // 🆕 Login-related fields
-    userId: { type: String, unique: true },
+    // FIX: sparse allows multiple null values
+    userId: { type: String, sparse: true },
     username: { type: String },
     password: { type: String },
+
     sector: { type: String, default: "Doctor" },
+
     status: {
       type: String,
       enum: ["Pending", "Approved", "Rejected"],
@@ -28,5 +30,4 @@ const doctorSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Doctor = mongoose.model("Doctor", doctorSchema);
-export default Doctor;
+export default mongoose.model("Doctor", doctorSchema);

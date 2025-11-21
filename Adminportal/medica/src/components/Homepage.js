@@ -317,6 +317,9 @@ const HospitalsSection = () => {
   );
 };
 
+
+//Pharamcay Section
+
 const PharmacySection = () => {
   const [pharmacies, setPharmacies] = useState([]);
   const [expanded, setExpanded] = useState({});

@@ -9,6 +9,12 @@ const patientSchema = new mongoose.Schema(
     mobile: { type: String, required: true },
     password: { type: String, required: true },
     userID: { type: String, unique: true }, // FIXED
+    username: {
+  type: String,
+  unique: true,
+  required: true,
+},
+
   },
   { timestamps: true }
 );

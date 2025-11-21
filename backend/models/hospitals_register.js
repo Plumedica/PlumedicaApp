@@ -1,4 +1,3 @@
-// models/hospitals_register.js
 import mongoose from "mongoose";
 
 const hospitalSchema = new mongoose.Schema(
@@ -8,9 +7,9 @@ const hospitalSchema = new mongoose.Schema(
     address: { type: String, required: true },
     gstId: { type: String, required: true },
     specialisation: { type: String, required: true },
-    mailId: { type: String, required: true },
+    email: { type: String, required: true },  // FIXED
     phoneNumber: { type: String, required: true },
-    userId: { type: String, unique: true, sparse: true },
+    userId: { type: String, sparse: true },
     username: { type: String },
     password: { type: String },
     sector: { type: String, default: "Hospital" },

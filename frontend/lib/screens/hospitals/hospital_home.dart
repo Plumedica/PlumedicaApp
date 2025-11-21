@@ -19,7 +19,7 @@ class _HospitalHomeState extends State<HospitalHome> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _gstIdController = TextEditingController();
   final TextEditingController _specialisationController = TextEditingController();
-  final TextEditingController _mailIdController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneNumberController = TextEditingController();
 
   @override
@@ -29,7 +29,7 @@ class _HospitalHomeState extends State<HospitalHome> {
     _addressController.dispose();
     _gstIdController.dispose();
     _specialisationController.dispose();
-    _mailIdController.dispose();
+    _emailController.dispose();
     _phoneNumberController.dispose();
     super.dispose();
   }
@@ -46,7 +46,7 @@ class _HospitalHomeState extends State<HospitalHome> {
       "address": _addressController.text.trim(),
       "gstId": _gstIdController.text.trim(),
       "specialisation": _specialisationController.text.trim(),
-      "mailId": _mailIdController.text.trim(),
+      "email": _emailController.text.trim(),
       "phoneNumber": _phoneNumberController.text.trim(),
     };
 
@@ -75,16 +75,17 @@ class _HospitalHomeState extends State<HospitalHome> {
         _addressController.clear();
         _gstIdController.clear();
         _specialisationController.clear();
-        _mailIdController.clear();
+        _emailController.clear();
         _phoneNumberController.clear();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Failed to register. (${response.statusCode})"),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+  final res = jsonDecode(response.body);
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(res["message"] ?? "Registration failed"),
+      backgroundColor: Colors.red,
+    ),
+  );
+}
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -138,7 +139,7 @@ class _HospitalHomeState extends State<HospitalHome> {
               const SizedBox(height: 12),
               _buildTextField("Specialisation", _specialisationController),
               const SizedBox(height: 12),
-              _buildTextField("Mail ID", _mailIdController,
+              _buildTextField("Email", _emailController,
                   keyboardType: TextInputType.emailAddress),
               const SizedBox(height: 12),
               _buildTextField("Phone Number", _phoneNumberController,

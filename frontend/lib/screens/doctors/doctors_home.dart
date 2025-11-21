@@ -42,73 +42,77 @@ class _DoctorsHomeState extends State<DoctorsHome> {
   }
 
   // ✅ Submit form data to backend
-  Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) return;
+Future<void> _submitForm() async {
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isSubmitting = true);
+  setState(() => _isSubmitting = true);
 
-    final doctorData = {
-      "fullName": _fullNameController.text.trim(),
-      "regNumber": _regNumberController.text.trim(), 
-      "specialisation": _specialisationController.text.trim(),
-       "yearOfReg": _yearOfRegController.text.trim(),
-      "pg": _pgController.text.trim(),
-      "mbbs": _mbbsController.text.trim(),
-      "contact": _contactController.text.trim(),
-      "email": _emailController.text.trim(),
-      "address": _addressController.text.trim(),
-      "shareLocation": _shareLocation,
-    };
+  final doctorData = {
+    "fullName": _fullNameController.text.trim(),
+    "regNumber": _regNumberController.text.trim(),
+    "specialisation": _specialisationController.text.trim(),
+    "yearOfReg": int.parse(_yearOfRegController.text.trim()),
+    "pg": _pgController.text.trim(),
+    "mbbs": _mbbsController.text.trim(),
+    "contact": _contactController.text.trim(),
+    "email": _emailController.text.trim(),
+    "address": _addressController.text.trim(),
+    "shareLocation": _shareLocation,
+  };
 
-    try {
-      // 🟢 Replace with your actual backend API URL
-      final url = Uri.parse("http://10.0.2.2:3000/doctors/register");
+  try {
+    final url = Uri.parse("http://10.0.2.2:3000/doctors/register");
 
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(doctorData),
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(doctorData),
+    );
+
+    final jsonResponse = jsonDecode(response.body);
+
+    if (response.statusCode == 201) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Doctor Registered Successfully ✅"),
+          backgroundColor: Colors.green,
+        ),
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Doctor Registered Successfully ✅"),
-            backgroundColor: Colors.green,
-          ),
-        );
+      // Reset form & controllers
+      _formKey.currentState!.reset();
+      _fullNameController.clear();
+      _regNumberController.clear();
+      _specialisationController.clear();
+      _yearOfRegController.clear();
+      _pgController.clear();
+      _mbbsController.clear();
+      _contactController.clear();
+      _emailController.clear();
+      _addressController.clear();
+      setState(() => _shareLocation = false);
 
-        // Clear form
-        _formKey.currentState!.reset();
-        _fullNameController.clear();
-        _regNumberController.clear();
-        _specialisationController.clear();
-        _yearOfRegController.clear();
-        _pgController.clear();
-        _mbbsController.clear();
-        _contactController.clear();
-        _emailController.clear();
-        _addressController.clear();
-        setState(() => _shareLocation = false);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Failed to register. (${response.statusCode})"),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
+    } else {
+      // Show error message returned by backend (e.g. "Email already registered!")
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Error: $e"),
+          content: Text(jsonResponse["message"] ?? "Registration failed"),
           backgroundColor: Colors.red,
         ),
       );
-    } finally {
-      setState(() => _isSubmitting = false);
     }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Error: $e"),
+        backgroundColor: Colors.red,
+      ),
+    );
+  } finally {
+    setState(() => _isSubmitting = false);
   }
+}
+
 
   Widget _buildTextField(
     String label,

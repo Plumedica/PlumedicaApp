@@ -9,18 +9,18 @@ const router = express.Router();
 // ✅ Correct POST - Register Pharmacy
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, mobile, address } = req.body;
+   const { name, registrationId, address, phoneNumber, email } = req.body;
 
-    // 🔹 Validate fields
-    if (!name || !email || !mobile || !address) {
+    if (!name || !registrationId || !address || !phoneNumber || !email) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
     // 🔹 Check if email already exists BEFORE saving
-    const existing = await Pharmacy.findOne({ email });
-    if (existing) {
-      return res.status(400).json({ message: "Email already exists" });
-    }
+     const existing = await Pharmacy.findOne({ email: req.body.email });
+           if (existing) {
+             // Email already registered
+             return res.status(400).json({ message: "Email already registered!" });
+           }
 
     // 🔹 Now save pharmacy
     const pharmacy = new Pharmacy(req.body);
@@ -49,24 +49,35 @@ router.get("/register", async (req, res) => {
 });
 
 
-//Login Doctor credentials
+//Login Pharamacy credentials
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
+
   try {
     const pharmacy = await Pharmacy.findOne({ username });
     if (!pharmacy) {
-      return res.status(404).json({ message: "Pharmacy not found" });
-    } 
+      return res.status(404).json({ success: false, message: "Pharmacy not found" });
+    }
+
     const validPassword = await argon2.verify(pharmacy.password, password);
     if (!validPassword) {
-      return res.status(401).json({ message: "Invalid password" });
-    } 
-    res.json({ message: "Login successful", pharmacy });
+      return res.status(401).json({ success: false, message: "Invalid password" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      pharmacy,
+    });
+
   } catch (error) {
-    res.status(500).json({ message: "Error during login", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Error during login",
+      error: error.message,
+    });
   }
 });
-
 
 
 

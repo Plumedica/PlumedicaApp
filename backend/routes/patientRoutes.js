@@ -21,59 +21,66 @@ function generateUserID(name, dob, mobile) {
 }
 
 router.post("/register", async (req, res) => {
-  try {
-    const { name, dob, gender, email, mobile, password } = req.body;
+  try {
+    const { name, dob, gender, email, mobile, password } = req.body;
 
-    if (!name || !dob || !gender || !email || !mobile || !password) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
+    if (!name || !dob || !gender || !email || !mobile || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
 
-    const existing = await Patient.findOne({ email });
-    if (existing) {
-      return res.status(400).json({ message: "Email already exists" });
-    }
+    // Username = email
+    const username = email.toLowerCase().trim();
 
-    const userID = generateUserID(name, dob, mobile);
+    // Check if email already exists
+    const existing = await Patient.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
 
-    const idExists = await Patient.findOne({ userID });
-    if (idExists) {
-      return res.status(400).json({ message: "UserID already exists, try again later" });
-    }
+    // Generate userID (always unique)
+    const userID = generateUserID(name, dob, mobile);
 
-    const hashedPassword = await argon2.hash(password);
+    // Hash password
+    const hashedPassword = await argon2.hash(password);
 
-    const newPatient = new Patient({
-      name,
-      dob,
-      gender,
-      email,
-      mobile,
-      password: hashedPassword,
-      userID,
-    });
+    const newPatient = new Patient({
+      name,
+      dob,
+      gender,
+      email,
+      mobile,
+      password: hashedPassword,
+      userID,
+      username,   // <-- AUTOMATICALLY SET HERE
+    });
 
-    await newPatient.save();
+    await newPatient.save();
 
-    res.status(201).json({
-      message: "Patient registered successfully",
-      patient: {
-        id: newPatient._id,
-        name: newPatient.name,
-        email: newPatient.email,
-        userID: newPatient.userID,
-      },
-    });
-  } catch (err) {
-    console.error("Registration error:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
+    res.status(201).json({
+      message: "Patient registered successfully",
+      patient: {
+        id: newPatient._id,
+        name: newPatient.name,
+        email: newPatient.email,
+        userID: newPatient.userID,
+        username: newPatient.username,
+      },
+    });
+
+  } catch (err) {
+    console.error("Registration error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
 });
+
 
 //Login patient credentials
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { username, password } = req.body;
   try {
-    const patient = await Patient.findOne({ email });
+   const patient = await Patient.findOne({
+  $or: [{ username }, { email: username }]
+});
     if (!patient) {
       return res.status(404).json({ message: "Patient not found" });
     } 
