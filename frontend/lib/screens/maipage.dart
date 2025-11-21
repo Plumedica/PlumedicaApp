@@ -120,25 +120,25 @@ class _ModuleLoginPageState extends State<ModuleLoginPage> {
 
   // --------------- FIXED: JSON LOGIN REQUEST -------------------
   Future<bool> loginUser() async {
-    final url = getLoginUrl();
+  final url = getLoginUrl();
 
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {"Content-Type": "application/json"}, // VERY IMPORTANT
-      body: json.encode({
-        "username": _username.text.trim(), // Backend expects email field
-        "password": _password.text.trim(),
-      }),
-    );
+  final response = await http.post(
+    Uri.parse(url),
+    headers: {"Content-Type": "application/json"},
+    body: json.encode({
+      "username": _username.text.trim(),
+      "password": _password.text.trim(),
+    }),
+  );
 
-    final decoded = json.decode(response.body);
+  final decoded = json.decode(response.body);
 
-    if (response.statusCode == 200 && decoded["success"] == true) {
-      return true;
-    } else {
-      throw Exception(decoded["message"] ?? "Invalid login");
-    }
+  if (response.statusCode == 200 && decoded["success"] == true) {
+    return true;
+  } else {
+    throw Exception(decoded["message"] ?? "Login failed");
   }
+}
 
   // --------------- FIXED: DASHBOARD SELECTOR -------------------
   Widget getDashboard() {
@@ -204,57 +204,76 @@ class _ModuleLoginPageState extends State<ModuleLoginPage> {
               child: Form(
                 key: _formKey,
                 child: Column(
-                  children: [
-                    SizedBox(height: 30),
-                    Text("Login as $moduleName",
-                        style: TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.bold)),
-                    SizedBox(height: 28),
+  children: [
+    SizedBox(height: 30),
+    Text(
+      "Login as $moduleName",
+      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+    ),
+    SizedBox(height: 28),
 
-                    // EMAIL
-                    TextFormField(
-                      controller: _username,
-                      decoration: InputDecoration(
-                        labelText: "Username",
-                        prefixIcon: Icon(Icons.email),
-                      ),
-                      validator: (v) =>
-                          v!.isEmpty ? "Enter username" : null,
-                    ),
-                    SizedBox(height: 18),
+    // USERNAME
+    TextFormField(
+      controller: _username,
+      decoration: InputDecoration(
+        labelText: "Username",
+        prefixIcon: Icon(Icons.email),
+      ),
+      validator: (v) => v!.isEmpty ? "Enter username" : null,
+    ),
+    SizedBox(height: 18),
 
-                    // PASSWORD
-                    TextFormField(
-                      controller: _password,
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        labelText: "Password",
-                        prefixIcon: Icon(Icons.lock),
-                      ),
-                      validator: (v) =>
-                          v!.isEmpty ? "Enter password" : null,
-                    ),
-                    SizedBox(height: 22),
+    // PASSWORD
+    TextFormField(
+      controller: _password,
+      obscureText: true,
+      decoration: InputDecoration(
+        labelText: "Password",
+        prefixIcon: Icon(Icons.lock),
+      ),
+      validator: (v) => v!.isEmpty ? "Enter password" : null,
+    ),
 
-                    if (_errorMsg != null)
-                      Text(
-                        _errorMsg!,
-                        style: TextStyle(color: Colors.red, fontSize: 15),
-                      ),
+    SizedBox(height: 10),
 
-                    SizedBox(height: 10),
+    // ⭐ ADDED: FORGOT PASSWORD BUTTON ⭐
+    Align(
+      alignment: Alignment.centerRight,
+      child: TextButton(
+        onPressed: () {
+          // TODO: Navigate to Forgot Password Page
+          print("Forgot password clicked for $moduleName");
+        },
+        child: Text(
+          "Forgot Password?",
+          style: TextStyle(color: Colors.teal, fontSize: 14),
+        ),
+      ),
+    ),
 
-                    ElevatedButton(
-                      onPressed: _loading ? null : _submit,
-                      child: _loading
-                          ? CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2)
-                          : Text("Login"),
-                      style: ElevatedButton.styleFrom(
-                          minimumSize: Size(double.infinity, 50)),
-                    ),
-                  ],
-                ),
+    if (_errorMsg != null)
+      Text(
+        _errorMsg!,
+        style: TextStyle(color: Colors.red, fontSize: 15),
+      ),
+
+    SizedBox(height: 10),
+
+    ElevatedButton(
+      onPressed: _loading ? null : _submit,
+      child: _loading
+          ? CircularProgressIndicator(
+              color: Colors.white,
+              strokeWidth: 2,
+            )
+          : Text("Login"),
+      style: ElevatedButton.styleFrom(
+        minimumSize: Size(double.infinity, 50),
+      ),
+    ),
+  ],
+)
+
               ),
             ),
           ),

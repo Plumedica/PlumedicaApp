@@ -75,24 +75,50 @@ router.post("/register", async (req, res) => {
 
 
 //Login patient credentials
+// Login patient credentials
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
+
   try {
-   const patient = await Patient.findOne({
-  $or: [{ username }, { email: username }]
-});
+    const patient = await Patient.findOne({
+      $or: [{ username: username.toLowerCase().trim() }, { email: username.toLowerCase().trim() }]
+    });
+
     if (!patient) {
-      return res.status(404).json({ message: "Patient not found" });
-    } 
+      return res.status(404).json({
+        success: false,
+        message: "Patient not found"
+      });
+    }
+
     const validPassword = await argon2.verify(patient.password, password);
     if (!validPassword) {
-      return res.status(401).json({ message: "Invalid password" });
-    } 
-    res.json({ message: "Login successful", patient });
+      return res.status(401).json({
+        success: false,
+        message: "Invalid password"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
+      patient: {
+        id: patient._id,
+        name: patient.name,
+        email: patient.email,
+        userID: patient.userID,
+      }
+    });
+
   } catch (error) {
-    res.status(500).json({ message: "Error during login", error: error.message });
+    return res.status(500).json({
+      success: false,
+      message: "Error during login",
+      error: error.message
+    });
   }
 });
+
 
 
 export default router;
