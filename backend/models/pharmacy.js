@@ -17,6 +17,9 @@ const pharmacySchema = new mongoose.Schema(
       enum: ["Pending", "Approved", "Rejected"],
       default: "Pending",
     },
+    resetToken: String,
+resetTokenExpiry: Date,
+
   },
   { timestamps: true }
 );
