@@ -14,6 +14,9 @@ const patientSchema = new mongoose.Schema(
   unique: true,
   required: true,
 },
+resetToken: String,
+resetTokenExpiry: Date,
+
 
   },
   { timestamps: true }

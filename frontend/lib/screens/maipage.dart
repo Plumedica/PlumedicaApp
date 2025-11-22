@@ -7,6 +7,7 @@ import './doctors/doctor_dashboard.dart';
 import './hospitals/hospital_dashboard.dart';
 import './patients/patient_dashboard.dart';
 import './pharmacies/pharmacy_dashboard.dart';
+import "./forgot_password.dart";
 
 enum ModuleType { Doctor, Hospital, Patients, Pharmacy }
 
@@ -241,9 +242,14 @@ class _ModuleLoginPageState extends State<ModuleLoginPage> {
       alignment: Alignment.centerRight,
       child: TextButton(
         onPressed: () {
-          // TODO: Navigate to Forgot Password Page
-          print("Forgot password clicked for $moduleName");
-        },
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => ForgotPasswordPage(module: moduleName.toLowerCase()),
+    ),
+  );
+},
+
         child: Text(
           "Forgot Password?",
           style: TextStyle(color: Colors.teal, fontSize: 14),

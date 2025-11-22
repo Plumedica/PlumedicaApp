@@ -120,5 +120,54 @@ router.post("/login", async (req, res) => {
 });
 
 
+router.post("/forgot-password", async (req, res) => {
+  const { email } = req.body;
+
+  const patient = await Patient.findOne({ email });
+  if (!patient) return res.status(404).json({ message: "No patient exists with this email" });
+
+  const token = crypto.randomBytes(32).toString("hex");
+  patient.resetToken = token;
+  patient.resetTokenExpiry = Date.now() + 1000 * 60 * 15; // 15 mins
+  await patient.save();
+
+  const resetLink = `http://10.2.0.1:3000/patients/reset-password/${token}?module=patient`;
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+  });
+
+  await transporter.sendMail({
+    to: patient.email,
+    subject: "Reset Your Password",
+    html: `<p>Click here to reset: <a href="${resetLink}">${resetLink}</a></p>`,
+  });
+
+  res.json({ success: true, message: "Reset email sent" });
+});
+
+
+
+router.post("/reset-password/:token", async (req, res) => {
+  const { password } = req.body;
+  const { token } = req.params;
+
+  const patient = await Patient.findOne({
+    resetToken: token,
+    resetTokenExpiry: { $gt: Date.now() }
+  });
+
+  if (!patient) return res.status(400).json({ message: "Invalid or expired token" });
+
+  patient.password = await argon2.hash(password);
+  patient.resetToken = undefined;
+  patient.resetTokenExpiry = undefined;
+
+  await patient.save();
+
+  res.json({ success: true, message: "Password updated successfully" });
+});
+
 
 export default router;

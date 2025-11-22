@@ -152,4 +152,55 @@ router.put("/register/:id/status", async (req, res) => {
 });
 
 
+router.post("/forgot-password", async (req, res) => {
+  const { email } = req.body;
+
+  const pharmacy = await Pharmacy.findOne({ email });
+  if (!pharmacy) return res.status(404).json({ message: "No pharmacy exists with this email" });
+
+  const token = crypto.randomBytes(32).toString("hex");
+  pharmacy.resetToken = token;
+  pharmacy.resetTokenExpiry = Date.now() + 1000 * 60 * 15; // 15 mins
+  await pharmacy.save();
+
+  const resetLink = `http://10.2.0.1:3000/pharmacies/reset-password/${token}?module=pharmacy`;
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+  });
+
+  await transporter.sendMail({
+    to: pharmacy.email,
+    subject: "Reset Your Password",
+    html: `<p>Click here to reset: <a href="${resetLink}">${resetLink}</a></p>`,
+  });
+
+  res.json({ success: true, message: "Reset email sent" });
+});
+
+
+
+
+
+router.post("/reset-password/:token", async (req, res) => {
+  const { password } = req.body;
+  const { token } = req.params;
+
+  const pharmacy = await Pharmacy.findOne({
+    resetToken: token,
+    resetTokenExpiry: { $gt: Date.now() }
+  });
+
+  if (!pharmacy) return res.status(400).json({ message: "Invalid or expired token" });
+
+  pharmacy.password = await argon2.hash(password);
+  pharmacy.resetToken = undefined;
+  pharmacy.resetTokenExpiry = undefined;
+
+  await pharmacy.save();
+
+  res.json({ success: true, message: "Password updated successfully" });
+});
+
 export default router;
